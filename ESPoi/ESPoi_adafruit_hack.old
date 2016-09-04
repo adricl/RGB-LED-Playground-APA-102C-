@@ -1,0 +1,126 @@
+#include <FastLED.h>
+
+
+typedef uint16_t line_t;
+#include "new_graphics.h"
+
+
+
+//LED Settings
+
+#define PIN_DATA 4
+#define PIN_CLK 5
+#define BRIGHTNESS  64
+#define LED_TYPE    APA102
+#define COLOR_ORDER BGR
+CRGB leds[NUM_LEDS];
+
+///////////////////////////
+
+//Loading File
+
+uint32_t lastImageTime = 0L; // Time of last image change
+
+uint8_t  imageNumber   = 1,  // Current image being displayed
+         imageType = TRUECOLOR,          // Image type: PALETTE[1,4,8] or TRUECOLOR
+         *imagePalette,       // -> palette data in PROGMEM
+         *imagePixels,        // -> pixel data in PROGMEM
+         palette[16][3];     // RAM-based color table for 1- or 4-bit images
+line_t   imageLines,         // Number of lines in active image
+         imageLine;          // Current line number in image
+
+
+//function Defs
+void     imageInit(void);
+
+
+void imageInit() { // Initialize global image state for current imageNumber
+  imageType    = pgm_read_byte(&images[imageNumber].type);
+  imageLines   = pgm_read_word(&images[imageNumber].lines);
+  imageLine    = 0;
+  imagePalette = (uint8_t *)pgm_read_word(&images[imageNumber].palette);
+  imagePixels  = (uint8_t *)pgm_read_word(&images[imageNumber].pixels);
+  if(imageType == PALETTE1)      memcpy_P(palette, imagePalette,  2 * 3);
+  else if(imageType == PALETTE4) memcpy_P(palette, imagePalette, 16 * 3);
+  lastImageTime = millis(); // Save time of image init for next auto-cycle
+}
+
+void setup() {
+
+  delay( 3000 ); // power-up safety delay
+
+
+  Serial.begin(57600);
+
+
+  FastLED.addLeds<LED_TYPE, PIN_DATA, PIN_CLK, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+  FastLED.setBrightness(  BRIGHTNESS );
+  imageInit();
+
+  Serial.printf("\nimage type %d,",imageType);
+  Serial.printf("imageLines %d, ",imageLines);
+  Serial.printf("imageLine %d, ",imageLine);
+  Serial.printf("imagePalette %d, ",imagePalette);
+  Serial.printf("num Pixels %d, ",NUM_LEDS);
+  Serial.printf("imagePixels %d \n", imagePixels);
+
+}
+
+void loop() {
+  uint32_t t = millis();
+
+  uint8_t  pixelNum, r, g, b,
+           *ptr = (uint8_t *)&imagePixels[imageLine * NUM_LEDS * 3];
+  
+  switch(imageType) {
+    
+    case PALETTE1: { // 1-bit (2 color) palette-based image
+      uint8_t  pixelNum = 0, byteNum, bitNum, pixels, idx,
+              *ptr = (uint8_t *)&imagePixels[imageLine * NUM_LEDS / 8];
+              Serial.printf("PALETTE1\n");
+      for(byteNum = NUM_LEDS/8; byteNum--; ) { // Always padded to next byte
+        pixels = pgm_read_byte(ptr++);  // 8 pixels of data (pixel 0 = LSB)
+        Serial.printf("Pixels %d\n",pixels);
+        for(bitNum = 8; bitNum--; pixels >>= 1) {
+          idx = pixels & 1; // Color table index for pixel (0 or 1)
+          Serial.printf("%d\n", palette[idx][0]);
+          leds[pixelNum++].setRGB(palette[idx][0], palette[idx][1], palette[idx][2]);
+        }
+      }
+      break;
+    }
+
+    case PALETTE4: { // 4-bit (16 color) palette-based image
+      uint8_t  pixelNum, p1, p2,
+              *ptr = (uint8_t *)&imagePixels[imageLine * NUM_LEDS / 2];
+      for(pixelNum = 0; pixelNum < NUM_LEDS; ) {
+        p2  = pgm_read_byte(ptr++); // Data for two pixels...
+        p1  = p2 >> 4;              // Shift down 4 bits for first pixel
+        p2 &= 0x0F;                 // Mask out low 4 bits for second pixel
+        leds[pixelNum++].setRGB(
+          palette[p1][0], palette[p1][1], palette[p1][2]);
+        leds[pixelNum++].setRGB(
+          palette[p2][0], palette[p2][1], palette[p2][2]);
+      }
+      break;
+    }
+            
+    case TRUECOLOR:{
+      for (pixelNum = 0; pixelNum < NUM_LEDS; pixelNum++) {
+        r = pgm_read_byte(ptr++);
+        g = pgm_read_byte(ptr++);
+        b = pgm_read_byte(ptr++);
+        //unsigned int colour = (r << 16) + ( g << 8) + b;
+        //Serial.printf("%u %u %u\n", r, g,b);
+        //leds[pixelNum] =  colour;
+      }
+      break;
+    }
+    
+  }
+
+  FastLED.show();
+  FastLED.delay(90);
+  //FastLED.delay(1000 / UPDATES_PER_SECOND);
+
+}
