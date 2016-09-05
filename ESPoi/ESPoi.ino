@@ -34,6 +34,7 @@ void loop() {
   uint32_t currentTime = millis();
   
   //while (millis()< currentTime + 8000) { 
+//Slice# + (led# * SLICE_COUNT)
 
     Serial.print("loop\n");
     for(int pos = NUM_LEDS; pos > 0; pos--){
