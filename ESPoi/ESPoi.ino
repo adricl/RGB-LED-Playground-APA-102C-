@@ -6,7 +6,7 @@
 
 #define PIN_DATA 13
 #define PIN_CLK 14
-#define BRIGHTNESS  64
+#define BRIGHTNESS  40
 #define LED_TYPE    APA102
 #define COLOR_ORDER BGR
 #define LED_STRIP_COUNT 240
@@ -27,7 +27,11 @@ void setup() {
   FastLED.addLeds<LED_TYPE, PIN_DATA, PIN_CLK, COLOR_ORDER>(leds, LED_STRIP_COUNT).setCorrection( TypicalLEDStrip );
   FastLED.setBrightness(  BRIGHTNESS );
   Serial.print("\nINIT\n");
-
+  
+  FastLED.showColor(CRGB::Black);
+  
+  
+  delay( 300 ); 
 }
 
 void loop() {
@@ -37,22 +41,25 @@ void loop() {
 //Slice# + (led# * SLICE_COUNT)
 
     Serial.print("loop\n");
-    for(int pos = NUM_LEDS; pos > 0; pos--){
-      Serial.printf("pos %d\n", pos);
-      for (int x = 0; x < NUM_SLICES; x++){
-        int line = x + ((NUM_LEDS - pos)*NUM_SLICES);
-        Serial.printf("Line %d\n", line);
-        leds[pos - 1] = array1[line];
+    for(int slice = 0; slice < NUM_SLICES; slice++){
+      FastLED.clear();
+      for(int led = 0; led < NUM_LEDS; led++){
+        int pos = slice + (led * NUM_SLICES);
+        if (pos > 2999){
+          Serial.print("Error\n");
+        }
+        else {
+          Serial.printf("Line %d", pos);
+          Serial.printf(" 0x%06x\n", array1[pos]);
+          //leds[ 220+ led ] = array1[pos];
+        }
       }
-        FastLED.show();        
-        delayMicroseconds(60); //may need to increase / decrease depending on spin rate
-      
-      
+      FastLED.show();        
+      delayMicroseconds(1000); //may need to increase / decrease depending on spin rate
+      Serial.printf("Slice %d\n", slice);
     }
-      
-  
-  delayMicroseconds(1000);
+  delayMicroseconds(10);
   Serial.print("Delay\n");
 //}
-  
+ 
 }
