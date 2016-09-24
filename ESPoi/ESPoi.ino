@@ -37,21 +37,27 @@ void setup() {
 
 void loop() {
   uint32_t currentTime = millis();
-  static int pos = 0;
+  static int slice = 0;
 
-  for(int i = 0; i < LED_STRIP_COUNT; i++){
-    Serial.printf(" %d ", pos);
-    leds[i] = array1[pos];
+
+  for(int led_num = 0; led_num < LED_STRIP_COUNT; led_num++){
+
+    uint8_t pos = slice * LED_STRIP_COUNT + led_num;
+    Serial.printf("Slice: %d, LED: %d, pos: %d", slice, led_num, pos);   
+    leds[led_num] = array1[pos];
+    
     Serial.printf(" %x ", array1[pos]);
-    pos++;
+    
   }
+  Serial.print("\n");
   FastLED.show();
-  if (pos >= (sizeof(array1))/sizeof(int)) {
-    pos = 0;  
+  delay(10);
+  if ( slice >= NUM_SLICES){
+    slice = 0;
   }
-  delay(100);
-  Serial.print("Delay\n");
- 
+  else {
+    slice++; 
+  }
 }
 
 
