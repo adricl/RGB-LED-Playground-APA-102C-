@@ -32,7 +32,7 @@ void setup() {
   //FastLED.showColor(CRGB::Black);
   
   
-  delay( 300 ); 
+  delay( 3000 ); 
 }
 
 void loop() {
@@ -43,15 +43,15 @@ void loop() {
   for(int led_num = 0; led_num < LED_STRIP_COUNT; led_num++){
 
     uint8_t pos = slice * LED_STRIP_COUNT + led_num;
-    Serial.printf("Slice: %d, LED: %d, pos: %d", slice, led_num, pos);   
+    //Serial.printf("Slice: %d, LED: %d, pos: %d", slice, led_num, pos);   
     leds[led_num] = array1[pos];
     
-    Serial.printf(" %x ", array1[pos]);
+    //Serial.printf(" %x ", array1[pos]);
     
   }
-  Serial.print("\n");
+  //Serial.print("\n");
   FastLED.show();
-  delay(10);
+  FastLED.delay(40);
   if ( slice >= NUM_SLICES){
     slice = 0;
   }
