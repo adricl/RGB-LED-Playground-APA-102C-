@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Convert Image for Persistence of Vision</title>
+    <style type="text/css">
+        body {
+            margin: 40px auto;
+            max-width: 800px;
+            line-height: 1.6;
+            font-size: 18px;
+            color: #444;
+            padding: 0 10px
+        }
+        h1,
+        h2,
+        h3 { line-height: 1.2 }
+        img { padding: 15px 0 }
+    </style>
+    <script>
+        function readURL(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var imageDisplay = document.getElementById("imageDisplay");
+                    imageDisplay.src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        };
+        function getImageData(){
+            var output = "const unsigned int array1[] = { ";
+            var width = document.getElementById("width").value;
+            var height = document.getElementById("height").value;
+            var imageDisplay = document.getElementById("imageDisplay");
+            var resizedCanvas = document.getElementById("resizedImage");
+
+            //Set Canvas Size
+            var context = resizedCanvas.getContext("2d");
+            resizedCanvas.width = width;
+            resizedCanvas.height = height;
+            context.drawImage(imageDisplay, 0, 0, width, height);
+
+            var imageData = context.getImageData(0, 0, width, height);
+            for (var i = 0; i < imageData.data.length; i += 4) {
+              var r = imageData.data[i];
+              var g = imageData.data[i + 1];
+              var b = imageData.data[i + 2];
+              //we skip the Alpha channel
+              if ((i % (width * 4)) == 0 ){
+                output += "\n";
+              }
+
+              output += "0x";
+              output +=  ("0" + parseInt(r,10).toString(16)).slice(-2) +
+                         ("0" + parseInt(g,10).toString(16)).slice(-2) +
+                         ("0" + parseInt(b,10).toString(16)).slice(-2);
+              output += ", ";
+            }
+            output += "};";
+
+
+            document.getElementById("codeOutput").innerHTML = output;
+        };
+    </script>
+</head>
+
+<body>
+    <header>
+        <h1>Converts Image for Persistence of Vision</h1></header>
+    <p>This will convert your image into code that can be added to the POI Code and uploaded for display</p>
+    <div>Select Image <input name="get-Image" type="file" onchange="readURL(this)"></div>
+    <div><img id="imageDisplay"></div>
+    <div>
+        <div>Number of Slices (Width) <input id="width" type="number"></div>
+        <div>Number of LEDs (Height) <input id="height" type="number"></div>
+        <button onclick="getImageData()">Get Image Code</button>
+        <p><strong>Resized Image to be displayed:</strong></p>
+        <canvas id="resizedImage"></canvas>
+        <p>Code:</p>
+        <div><textarea cols="100" id="codeOutput" rows="10"></textarea></div>
+    </div>
+</body>
+<div></div>
+<!--code by mortonkopf and modified by Adricl-->
+
+</html>
