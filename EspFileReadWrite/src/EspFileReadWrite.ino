@@ -24,8 +24,18 @@ void setup (){
     Serial.println("file open failed");
     return;
   }
+  Serial.printf("Size of array %d\n", sizeof(array1));
+
+  unsigned char byteArray[2];
+  unsigned int currVal = 0;
+  unsigned int recon = 0;
   for(int i = 0; i < sizeof(array1)/sizeof(int); i++){
-    f.printf("%06x", array1[i]);
+    currVal = array1[i];
+    byteArray[0] = (currVal >> 16) & 0xFF;
+    byteArray[1] = (currVal >> 8) & 0xFF;
+    byteArray[2] = currVal & 0xFF;
+
+    f.write(byteArray, 3 * sizeof(char));
   }
 
   f.flush();
@@ -33,27 +43,33 @@ void setup (){
   Serial.println("File Written\n");
   Serial.printf("Total kBytes: %d\n", (fs_info.totalBytes/1000));
 
+}
+
   f = SPIFFS.open("/file1.txt", "r");
   Serial.printf("File Size Bytes: %d\n", f.size());
-  Serial.printf("Array Size: %d\n", f.size()/6);
+  Serial.printf("Array Size: %d\n", f.size()/3);
+
   int chars = 0;
-  int count = 0;
+  unsigned int builtVal = 0;
   while(f.available()){
-    Serial.write(f.read());
+    unsigned char val = f.read();
 
-    if (chars > 4)
-    {
-      Serial.print(", 0x");
-      chars = 0;
-      count++;
+    switch (chars) {
+      case 0:
+        builtVal |= (unsigned int)val << 16;
+        chars++;
+        break;
+      case 1:
+        builtVal |= (unsigned int)val << 8;
+        chars++;
+        break;
+      case 2:
+        builtVal |= (unsigned int)val;
+        chars = 0;
+        builtVal = 0;
+        break;
     }
-    else
-    {
-      chars++;
-    }
-
   }
-  Serial.printf("\n\n Count: %d", count);
 
 }
 
